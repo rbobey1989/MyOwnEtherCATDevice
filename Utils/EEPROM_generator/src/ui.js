@@ -351,6 +351,7 @@ function onEditObjectSubmit(modalform) {
 	const index = indexToString(modalform.Index.value);
 
 	objd.name = modalform.ObjectName.value;
+	objd.access = modalform.Access.value;
 
 	switch (objectType) {
 		case OTYPE.VAR:
@@ -361,7 +362,6 @@ function onEditObjectSubmit(modalform) {
 			} else {
 				objd.value = modalform.InitalValue.value;
 			}
-	                objd.access = odModal.form.Access.value;
 
 			break;
 		case OTYPE.ARRAY:

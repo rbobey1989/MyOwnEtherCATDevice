@@ -63,7 +63,7 @@ function esi_generator(form, od, indexes, dc)
 			customTypes[dtName] = true;
 			result += `\n              <DataType>`;
 			
-			let flags = `\n                    <Access>ro</Access>`; // PDO assign flags for variables are set in dictionary objects section
+			const maxSubindexFlags = `\n                    <Access>ro</Access>`;
 			if (objd.otype == OTYPE.ARRAY) {
 				addVariableType(objd); // queue variable type to add after array code is generated
 				let esi_type = ESI_DT[objd.dtype];
@@ -75,8 +75,9 @@ function esi_generator(form, od, indexes, dc)
 			}
 			result += `\n                <Name>${dtName}</Name>\n                <BitSize>${bitsize}</BitSize>`;
 			result += `\n                <SubItem>\n                  <SubIdx>0</SubIdx>\n                  <Name>Max SubIndex</Name>\n                  <Type>USINT</Type>`
-				+ `\n                  <BitSize>8</BitSize>\n                  <BitOffs>0</BitOffs>\n                  <Flags>${flags}\n                  </Flags>\n                </SubItem>`;
+				+ `\n                  <BitSize>8</BitSize>\n                  <BitOffs>0</BitOffs>\n                  <Flags>${maxSubindexFlags}\n                  </Flags>\n                </SubItem>`;
 			
+			let flags = getAccessFlags(objd.access);
 			flags += getPdoMappingFlags(objd); // PDO assign flags for composite type
 			
 			switch (objd.otype) {
@@ -112,14 +113,18 @@ function esi_generator(form, od, indexes, dc)
 
 		return result;
 
-		function getSubitemFlags(objd, subitem) {
+		function getAccessFlags(accessValue) {
 			let access = 'ro';
 			let modifier = '';
-			if (subitem.access) {
-				access = subitem.access.slice(0,2).toLowerCase();
+			if (accessValue) {
+				access = accessValue.slice(0,2).toLowerCase();
 				modifier = ' WriteRestrictions="PreOP"';
 			}
-			let flags = `\n                    <Access${modifier}>${access}</Access>`; // PDO assign flags for variables are set in dictionary objects section
+			return `\n                    <Access${modifier}>${access}</Access>`;
+		}
+
+		function getSubitemFlags(objd, subitem) {
+			let flags = getAccessFlags(subitem.access || objd.access); // PDO assign flags for variables are set in dictionary objects section
 			flags += getPdoMappingFlags(objd); // PDO assign flags for composite type
 			return flags;
 		}
@@ -247,7 +252,7 @@ function esi_generator(form, od, indexes, dc)
 			subindex = 1;  // skip 'Max subindex'
 			objd.items.slice(subindex).forEach(subitem => {
 				esi += `\n          <Entry>\n            <Index>#x${index}</Index>\n            <SubIndex>#x${subindex.toString(16)}</SubIndex>\n            <BitLen>${bitsize}</BitLen>\n            <Name>${subitem.name}</Name>\n            <DataType>${esiType}</DataType>\n          </Entry>`;
-				// TODO handle padding for array of booleans
+				esi += pdoBooleanPadding(objd);
 				++subindex;
 			});
 			break;

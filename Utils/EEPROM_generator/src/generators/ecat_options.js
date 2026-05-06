@@ -71,9 +71,8 @@ function ecat_options_generator(form, od, indexes)
 						objd.pdo_mappings.forEach(mapping => {
 							if (mapping == pdoName) {
 								++result;
-								if (subitem.dtype == DTYPE.BOOLEAN) {
+								if (subitem.dtype == DTYPE.BOOLEAN || objd.dtype == DTYPE.BOOLEAN) {
 									++result; // boolean padding is mapping too
-									// TODO handle array of booleans
 								}
 							}
 						});

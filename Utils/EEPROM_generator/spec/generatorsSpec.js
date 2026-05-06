@@ -446,6 +446,71 @@ const _objectlist SDOobjects[] =
             expect(result).toEqual(objectlist);
         });
 
+    it("should honor WO access for compound RXPDO objects in objectlist and ESI", function() {
+      const originalRxpdo = getObjDictSection(rxpdo);
+      setObjDictSection(rxpdo, {});
+
+      try {
+        const rxpdoSection = getObjDictSection(rxpdo);
+        addObject(rxpdoSection, {
+          otype: OTYPE.ARRAY,
+          dtype: DTYPE.UNSIGNED8,
+          name: 'Outputs',
+          access: 'WO',
+          items: [
+            { name: 'Max SubIndex' },
+            { name: 'Out0', value: '0' },
+            { name: 'Out1', value: '0' },
+          ],
+          pdo_mappings: [rxpdo],
+        }, '7000');
+
+        const odWithRxpdo = buildObjectDictionary(form);
+        const indexesWithRxpdo = getUsedIndexes(odWithRxpdo);
+        const objectlist = objectlist_generator(form, odWithRxpdo, indexesWithRxpdo);
+        const esi = esi_generator(form, odWithRxpdo, indexesWithRxpdo, []);
+
+        expect(odWithRxpdo['7000'].access).toEqual('WO');
+        expect(objectlist).toContain('ATYPE_WO | ATYPE_RXPDO');
+        expect(esi).toContain('<Access WriteRestrictions="PreOP">wo</Access>');
+      } finally {
+        setObjDictSection(rxpdo, originalRxpdo);
+      }
+    });
+
+    it("should add padding mappings for BOOLEAN arrays in PDOs", function() {
+      const originalRxpdo = getObjDictSection(rxpdo);
+      setObjDictSection(rxpdo, {});
+
+      try {
+        addObject(getObjDictSection(rxpdo), {
+          otype: OTYPE.ARRAY,
+          dtype: DTYPE.BOOLEAN,
+          name: 'BoolOut',
+          access: 'WO',
+          items: [
+            { name: 'Max SubIndex' },
+            { name: 'B0', value: '0' },
+            { name: 'B1', value: '0' },
+            { name: 'B2', value: '0' },
+          ],
+          pdo_mappings: [rxpdo],
+        }, '7000');
+
+        const odWithRxpdo = buildObjectDictionary(form);
+        const indexesWithRxpdo = getUsedIndexes(odWithRxpdo);
+        const objectlist = objectlist_generator(form, odWithRxpdo, indexesWithRxpdo);
+        const ecatOptions = ecat_options_generator(form, odWithRxpdo, indexesWithRxpdo);
+        const esi = esi_generator(form, odWithRxpdo, indexesWithRxpdo, []);
+
+        expect(objectlist).toContain('0x00000007');
+        expect(ecatOptions).toContain('#define MAX_MAPPINGS_SM2 6');
+        expect((esi.match(/<BitLen>7<\/BitLen>/g) || []).length).toBe(3);
+      } finally {
+        setObjDictSection(rxpdo, originalRxpdo);
+      }
+    });
+
         it("utypes_generator should generate expected code", function() {
             // arrange
             // act

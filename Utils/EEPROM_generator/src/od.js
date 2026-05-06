@@ -176,7 +176,9 @@ function addPdoObjectsSection(od, odSection, pdo){
 				objd.items.slice(subindex).forEach(subitem => { 
 					// create PDO mappings
 					pdoMappingObj.items.push({ name: subitem.name, dtype: DTYPE.UNSIGNED32, value: getPdoMappingValue(index, subindex , objd.dtype) });
-					// TODO handle padding on array of booleans
+					if (objd.dtype == DTYPE.BOOLEAN) {
+						addBooleanPadding(pdoMappingObj.items, ++_booleanPaddingCount);
+					}
 					++subindex;
 				});
 				break;
